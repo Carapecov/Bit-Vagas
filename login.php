@@ -1,17 +1,38 @@
 <?php
 session_start();
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $usuario = $_POST['usuario'] ?? '';
-    $senha   = $_POST['senha'] ?? '';
-    $termos  = isset($_POST['termos']);
+require_once "./config/conexao.php";
 
-    if (empty($usuario) || empty($senha)) {
-        $erro = "Preencha todos os campos.";
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $usuario_email = trim($_POST["usuario_email"]);
+    $senha = trim($_POST["senha"]);
+
+    if (empty($usuario_email) || empty($senha)) {
+        $erro = "Preencha todos os campos!";
     } else {
-        $_SESSION['usuario'] = $usuario;
-        header("Location: dashboard.php");
-        exit();
+        $sql = "SELECT * FROM usuarios 
+                WHERE (nome = ? OR email = ?) 
+                AND senha = ? 
+                LIMIT 1";
+
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("sss", $usuario_email, $usuario_email, $senha);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+
+        if ($resultado->num_rows === 1) {
+            $row = $resultado->fetch_assoc();
+
+            $_SESSION["usuario_id"] = $row["id"];
+            $_SESSION["usuario_nome"] = $row["nome"];
+
+            header("Location: vagas.php");
+            exit();
+        } else {
+            $erro = "Usuário/E-mail ou senha inválidos!";
+        }
+
+        $stmt->close();
     }
 }
 ?>
@@ -34,7 +55,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 <form method="POST" class="login-form">
                     <label for="usuario">Usuário ou Email:</label>
-                    <input type="text" id="usuario" name="usuario" required>
+                    <input type="text" id="usuario" name="usuario_email" required>
 
                     <label for="senha">Senha:</label>
                     <input type="password" id="senha" name="senha" required>
@@ -52,4 +73,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </footer>
 </body>
 </html>
-
