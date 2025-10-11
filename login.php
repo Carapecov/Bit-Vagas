@@ -69,7 +69,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </main>
 
     <footer>
-        <p>&copy; 2025 Portal de Estágio - Todos os direitos reservados.</p>
+        <p>&copy; 2025 BitVagas - Todos os direitos reservados.</p>
     </footer>
 </body>
 </html>
