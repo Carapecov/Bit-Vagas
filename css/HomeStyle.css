@@ -29,6 +29,13 @@ header nav {
   align-items: center;
 }
 
+header h3 {
+  font-size: 1.8rem;
+  color: blue;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
 header button {
   background: rgba(255, 255, 255, 0.15);
   border: none;
@@ -43,21 +50,16 @@ header button:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.menu {
-  list-style: none;
-  display: flex;
-  gap: 2rem;
+.intro {
+  text-align: center;
+  padding: 3rem 1rem 2rem;
 }
 
-.menu li a {
-  text-decoration: none;
-  color: #fff;
+.intro h1 {
+  font-size: 2.2rem;
   font-weight: bold;
-  transition: 0.3s;
-}
-
-.menu li a:hover {
-  color: #00bfff;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 
 main {
@@ -134,8 +136,60 @@ footer {
   font-size: 0.9rem;
 }
 
-h3 {
-  color: #0051fe;
-  size: 10px;
-  margin-left: 1rem;
+aside {
+  position: fixed;
+  top: 20px;
+  right: -240px;
+  width: 200px;
+  height: auto;
+  background: linear-gradient(160deg, rgba(13, 71, 161, 0.6), rgba(25, 118, 210, 0.6), rgba(66, 165, 245, 0.5));
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  border-radius: 20px;
+  transition: right 0.4s ease;
+  padding: 60px 15px 20px 15px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+  z-index: 999;
+}
+
+aside nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+aside nav ul li {
+  margin: 15px 0;
+}
+
+aside nav ul li a {
+  color: #f0f8ff;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 16px;
+  transition: 0.3s;
+}
+
+aside nav ul li a:hover {
+  color: #00bfff;
+}
+
+aside.active {
+  right: 20px;
+}
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-size: 22px;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.close-btn:hover {
+  color: #00bfff;
 }

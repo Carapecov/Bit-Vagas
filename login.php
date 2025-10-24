@@ -1,35 +1,59 @@
 <?php
 session_start();
-
 require_once "./config/conexao.php";
 
+$erro = "";
+
+$conn->set_charset("utf8mb4");
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $usuario_email = trim($_POST["usuario_email"]);
+    $tipo_login = $_POST["tipo_login"];
+    $email = trim($_POST["email"]);
     $senha = trim($_POST["senha"]);
 
-    if (empty($usuario_email) || empty($senha)) {
+    if (empty($email) || empty($senha)) {
         $erro = "Preencha todos os campos!";
     } else {
-        $sql = "SELECT * FROM usuarios 
-                WHERE (nome = ? OR email = ?) 
-                AND senha = ? 
-                LIMIT 1";
+        if ($tipo_login === "usuario") {
+            $sql = "SELECT * FROM usuarios WHERE (nome = ? OR email = ?) LIMIT 1"; 
+        } else {
+            $sql = "SELECT * FROM empresas WHERE email = ? LIMIT 1";
+        }
 
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sss", $usuario_email, $usuario_email, $senha);
+
+        if ($tipo_login === "usuario") {
+            $stmt->bind_param("ss", $email, $email);
+        } else {
+            $stmt->bind_param("s", $email);
+        }
+
         $stmt->execute();
         $resultado = $stmt->get_result();
 
         if ($resultado->num_rows === 1) {
             $row = $resultado->fetch_assoc();
 
-            $_SESSION["usuario_id"] = $row["id"];
-            $_SESSION["usuario_nome"] = $row["nome"];
+            if (password_verify($senha, $row["senha"])) {
+                session_regenerate_id(true);
 
-            header("Location: vagas.php");
-            exit();
+                $_SESSION["tipo_login"] = $tipo_login;
+
+                if ($tipo_login === "usuario") {
+                    $_SESSION["usuario_id"] = $row["id"];
+                    $_SESSION["usuario_nome"] = $row["nome"];
+                    header("Location: vagas.php");
+                } else {
+                    $_SESSION["empresa_id"] = $row["id"];
+                    $_SESSION["empresa_nome"] = $row["nome"];
+                    header("Location: painel_empresa.php");
+                }
+                exit();
+            } else {
+                $erro = "Email ou senha inválidos!";
+            }
         } else {
-            $erro = "Usuário/E-mail ou senha inválidos!";
+            $erro = "Email ou senha inválidos!";
         }
 
         $stmt->close();
@@ -43,19 +67,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <title>Login - BitVagas</title>
     <link rel="stylesheet" href="css/loginStyle.css">
 </head>
-<body>
+<body class="usuario">
     <header>
-        <h2>Login <span>Bitvagas</span></h2>
+        <h2>Login <span>BitVagas</span></h2>
     </header>
 
     <main>
         <section>
             <article>
+                <button id="switchBtn" class="switch-btn">Entrar como Empresa</button>
+
                 <?php if (!empty($erro)) echo "<p class='erro'>$erro</p>"; ?>
 
                 <form method="POST" class="login-form">
-                    <label for="usuario">Usuário ou Email:</label>
-                    <input type="text" id="usuario" name="usuario_email" required>
+                    <input type="hidden" name="tipo_login" id="tipo_login" value="usuario">
+
+                    <label for="email">Usuário ou Email:</label>
+                    <input type="text" id="email" name="email" required>
 
                     <label for="senha">Senha:</label>
                     <input type="password" id="senha" name="senha" required>
@@ -71,5 +99,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <footer>
         <p>&copy; 2025 BitVagas - Todos os direitos reservados.</p>
     </footer>
+
+    <script>
+        const switchBtn = document.getElementById("switchBtn");
+        const tipoLogin = document.getElementById("tipo_login");
+        const emailLabel = document.querySelector("label[for='email']");
+        const body = document.body;
+        const article = document.querySelector("article");
+        const header = document.querySelector("header");
+
+        let isEmpresa = false;
+
+        switchBtn.addEventListener("click", () => {
+            isEmpresa = !isEmpresa;
+
+            if (isEmpresa) {
+                tipoLogin.value = "empresa";
+                emailLabel.textContent = "Email da Empresa:";
+                switchBtn.textContent = "Entrar como Usuário";
+                body.classList.remove("usuario");
+                body.classList.add("empresa");
+                article.classList.add("empresa-ativo");
+                header.classList.add("empresa-ativo");
+            } else {
+                tipoLogin.value = "usuario";
+                emailLabel.textContent = "Usuário ou Email:";
+                switchBtn.textContent = "Entrar como Empresa";
+                body.classList.remove("empresa");
+                body.classList.add("usuario");
+                article.classList.remove("empresa-ativo");
+                header.classList.remove("empresa-ativo");
+            }
+        });
+    </script>
 </body>
 </html>

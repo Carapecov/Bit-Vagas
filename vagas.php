@@ -61,9 +61,9 @@ $resultado_vagas = $stmt->get_result();
                 <li><a href="index.html">Home</a></li>
             </ul>
             <?php if (isset($_SESSION["usuario_nome"])): ?>
-                <p style="color: var(--cor-destaque);">Olá, <?php echo htmlspecialchars($_SESSION["usuario_nome"]); ?>!</p>
+                <a href="perfil.php" class="btn-destaque">Olá, <?php echo htmlspecialchars($_SESSION["usuario_nome"]); ?>!</a>
             <?php else: ?>
-                <a href="usuário.php" class="btn-destaque">Perfil</a>
+                <a href="login.php" class="btn-destaque">Perfil</a>
             <?php endif; ?>
         </nav>
     </header>
