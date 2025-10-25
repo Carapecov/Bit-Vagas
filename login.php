@@ -4,28 +4,26 @@ require_once "./config/conexao.php";
 
 $erro = "";
 
-$conn->set_charset("utf8mb4");
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $tipo_login = $_POST["tipo_login"];
-    $email = trim($_POST["email"]);
-    $senha = trim($_POST["senha"]);
+    $tipo_login = $_POST["tipo_login"] ?? "usuario";
+    $email = trim($_POST["email"] ?? "");
+    $senha = trim($_POST["senha"] ?? "");
 
     if (empty($email) || empty($senha)) {
         $erro = "Preencha todos os campos!";
     } else {
-        if ($tipo_login === "usuario") {
-            $sql = "SELECT * FROM usuarios WHERE (nome = ? OR email = ?) LIMIT 1"; 
+        if ($tipo_login === "empresa") {
+            $sql = "SELECT * FROM empresa WHERE email = ? AND senha = ? LIMIT 1";
         } else {
-            $sql = "SELECT * FROM empresas WHERE email = ? LIMIT 1";
+            $sql = "SELECT * FROM usuarios WHERE (nome = ? OR email = ?) AND senha = ? LIMIT 1";
         }
 
         $stmt = $conn->prepare($sql);
 
-        if ($tipo_login === "usuario") {
-            $stmt->bind_param("ss", $email, $email);
+        if ($tipo_login === "empresa") {
+            $stmt->bind_param("ss", $email, $senha);
         } else {
-            $stmt->bind_param("s", $email);
+            $stmt->bind_param("sss", $email, $email, $senha);
         }
 
         $stmt->execute();
@@ -34,26 +32,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($resultado->num_rows === 1) {
             $row = $resultado->fetch_assoc();
 
-            if (password_verify($senha, $row["senha"])) {
-                session_regenerate_id(true);
-
-                $_SESSION["tipo_login"] = $tipo_login;
-
-                if ($tipo_login === "usuario") {
-                    $_SESSION["usuario_id"] = $row["id"];
-                    $_SESSION["usuario_nome"] = $row["nome"];
-                    header("Location: vagas.php");
-                } else {
-                    $_SESSION["empresa_id"] = $row["id"];
-                    $_SESSION["empresa_nome"] = $row["nome"];
-                    header("Location: painel_empresa.php");
-                }
-                exit();
+            if ($tipo_login === "empresa") {
+                $_SESSION["empresa_id"] = $row["id"];
+                $_SESSION["empresa_nome"] = $row["nome"];
+                header("Location: painel_empresa.php");
             } else {
-                $erro = "Email ou senha inválidos!";
+                $_SESSION["usuario_id"] = $row["id"];
+                $_SESSION["usuario_nome"] = $row["nome"];
+                header("Location: vagas.php");
             }
+            exit();
         } else {
-            $erro = "Email ou senha inválidos!";
+            $erro = "E-mail ou senha inválidos!";
         }
 
         $stmt->close();

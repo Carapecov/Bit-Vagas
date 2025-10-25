@@ -104,9 +104,7 @@ $resultado_vagas = $stmt->get_result();
                         <?php endif; ?>
 
                         <?php if (isset($_SESSION["usuario_id"])): ?>
-                            <form method="POST" action="candidatar.php" style="margin-top: 1rem;">
-                                <input type="hidden" name="id_vaga" value="<?php echo $vaga['id']; ?>">
-                                <button type="submit" class="btn-detalhes">Candidatar-se</button>
+                            <a href="candidatar.php?id=<?php echo $vaga['id']; ?>" class="btn-detalhes" style="margin-top: 1rem; display: block; text-align: center;">Candidatar-se</a>
                             </form>
                         <?php else: ?>
                             <a href="login.php" class="btn-detalhes">Faça Login para Candidatar-se</a>

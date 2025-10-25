@@ -2,24 +2,36 @@
 session_start();
 require_once "./config/conexao.php";
 
+$mensagem_status = "";
+$conn->set_charset("utf8mb4");
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (isset($_SESSION["usuario_id"])) {
 
-        $id_usuario     = $_SESSION["usuario_id"];
-        $id_vaga        = $_POST["id_vaga"];
-        $nome           = $_POST["nome"];
-        $email          = $_POST["email"];
-        $idade          = $_POST["idade"];
-        $deficiencia    = $_POST["deficiencia"];
-        $experiencia    = $_POST["experiencia"];
-        $motivo         = $_POST["motivo"];
-        $personalidade  = $_POST["personalidade"];
-        $linkedin       = $_POST["linkedin"];
-        $github         = $_POST["github"];
+        $id_usuario      = $_SESSION["usuario_id"];
+        $id_vaga         = filter_var(isset($_POST["id_vaga"]) ? $_POST["id_vaga"] : 0, FILTER_SANITIZE_NUMBER_INT); 
+        
+        $nome            = trim(isset($_POST["nome"]) ? $_POST["nome"] : '');
+        $email           = trim(isset($_POST["email"]) ? $_POST["email"] : '');
+        $idade           = filter_var(isset($_POST["idade"]) ? $_POST["idade"] : 0, FILTER_SANITIZE_NUMBER_INT);
+        $deficiencia     = trim(isset($_POST["deficiencia"]) ? $_POST["deficiencia"] : '');
+        $experiencia     = trim(isset($_POST["experiencia"]) ? $_POST["experiencia"] : '');
+        $motivo          = trim(isset($_POST["motivo"]) ? $_POST["motivo"] : '');
+        $personalidade   = trim(isset($_POST["personalidade"]) ? $_POST["personalidade"] : '');
+        
+        $linkedin        = filter_var(trim(isset($_POST["linkedin"]) ? $_POST["linkedin"] : ''), FILTER_SANITIZE_URL);
+        $github          = filter_var(trim(isset($_POST["github"]) ? $_POST["github"] : ''), FILTER_SANITIZE_URL);
 
-        if (empty($nome) || empty($email) || empty($motivo)) {
-            echo "<p style='color:red;text-align:center;'>Preencha todos os campos obrigatórios.</p>";
+        if (empty($nome) || empty($email) || empty($motivo) || empty($idade) || empty($deficiencia)) {
+            $mensagem_status = "<p class='erro'>Preencha todos os campos obrigatórios.</p>";
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+             $mensagem_status = "<p class='erro'>O email fornecido não é válido.</p>";
+        } elseif ($linkedin && !filter_var($linkedin, FILTER_VALIDATE_URL)) {
+             $mensagem_status = "<p class='erro'>A URL do LinkedIn não é válida.</p>";
+        } elseif ($github && !filter_var($github, FILTER_VALIDATE_URL)) {
+             $mensagem_status = "<p class='erro'>A URL do GitHub não é válida.</p>";
         } else {
+            
             $sql = "INSERT INTO candidaturas 
                     (id_usuario, id_vaga, nome, email, idade, deficiencia, experiencia, motivo, personalidade, linkedin, github, data_candidatura)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
@@ -41,61 +53,63 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             );
 
             if ($stmt->execute()) {
-                echo "<p style='color:green;text-align:center;'>✅ Candidatura enviada com sucesso!</p>";
+                $mensagem_status = "<p class='sucesso'>✅ Candidatura enviada com sucesso!</p>";
             } else {
-                echo "<p style='color:red;text-align:center;'>❌ Erro ao enviar candidatura. Tente novamente.</p>";
+                error_log("Erro ao inserir candidatura: " . $stmt->error);
+                $mensagem_status = "<p class='erro'>❌ Erro ao enviar candidatura. Tente novamente.</p>";
             }
+            $stmt->close();
         }
 
     } else {
-        echo "<p style='color:red;text-align:center;'>Você precisa estar logado para se candidatar.</p>";
+        $mensagem_status = "<p class='erro'>Você precisa estar logado para se candidatar.</p>";
     }
 }
 
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    echo "<p style='color:red; text-align:center;'>Vaga inválida ou não encontrada.</p>";
-    exit;
+    if (empty($mensagem_status)) {
+        $mensagem_status = "<p class='erro'>Vaga inválida ou não encontrada.</p>";
+    }
+    $id_vaga_get = 0; 
+} else {
+    $id_vaga_get = (int) $_GET['id'];
 }
 
-$id_vaga = (int) $_GET['id'];
 
 $sql = "SELECT * FROM vagas_completa WHERE id = ?";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $id_vaga);
+$stmt->bind_param("i", $id_vaga_get);
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
-    echo "<p style='color:red; text-align:center;'>Vaga não encontrada.</p>";
-    exit;
+    if (empty($mensagem_status)) {
+        $mensagem_status = "<p class='erro'>Vaga não encontrada.</p>";
+    }
+    $vaga = []; 
+    $pode_exibir_conteudo = false;
+} else {
+    $vaga = $result->fetch_assoc();
+    $pode_exibir_conteudo = true;
 }
-
-$vaga = $result->fetch_assoc();
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title><?php echo htmlspecialchars($vaga['empresa']); ?> - Vaga Completa</title>
+    <title><?php echo $pode_exibir_conteudo ? htmlspecialchars($vaga['empresa'] . ' - Vaga Completa') : 'Vaga Não Encontrada'; ?></title>
+    <link rel="stylesheet" href="css/vagas.css">
     <link rel="stylesheet" href="css/candidatar.css">
 </head>
 <body>
-    <header>
-        <nav>
-            <h3>BitVagas</h3>
-            <ul class="header-menu">
-                <li><a href="index.html">Home</a></li>
-            </ul>
-            <?php if (isset($_SESSION["usuario_nome"])): ?>
-                
-            <?php else: ?>
-                <a href="login.php" class="btn-destaque">Cadastre-se</a>
-            <?php endif; ?>
-        </nav>
-    </header>
+            <button class=btn-destaque><a href="vagas.php">Voltar para as vagas</a></button>
 <main>
+    <?php echo $mensagem_status; ?>
+    
+    <?php if ($pode_exibir_conteudo): ?>
     <div class="container">
         <h1><?php echo htmlspecialchars($vaga['titulo_vaga']); ?></h1>
         <div class="vaga-info">
@@ -152,13 +166,14 @@ $vaga = $result->fetch_assoc();
             <p><strong>Email:</strong> <a href="mailto:<?php echo htmlspecialchars($vaga['email_contato']); ?>"><?php echo htmlspecialchars($vaga['email_contato']); ?></a></p>
             <p><strong>Telefone:</strong> <?php echo htmlspecialchars($vaga['telefone']); ?></p>
             <p><strong>Data de publicação:</strong> <?php echo date("d/m/Y H:i", strtotime($vaga['data_postagem'])); ?></p>
+            <button class="btn-destaque"><a href="empresa.php?id=<?php echo $vaga['id']; ?>" target="_blank">Visitar Site da Empresa</a></button>
         </div>
 
         <?php if (isset($_SESSION["usuario_id"])): ?>
         <div class="descricao">
             <h2> Entrevista Interativa</h2>
-            <form method="POST" action="candidatar.php" class="formulario-candidatura">
-                <input type="hidden" name="id_vaga" value="<?php echo $vaga['id']; ?>">
+            <form method="POST" action="candidatar.php?id=<?php echo htmlspecialchars($vaga['id']); ?>" class="formulario-candidatura">
+                <input type="hidden" name="id_vaga" value="<?php echo htmlspecialchars($vaga['id']); ?>">
 
                 <label for="nome">Nome Completo</label>
                 <input type="text" id="nome" name="nome" required>
@@ -198,10 +213,8 @@ $vaga = $result->fetch_assoc();
             <a href="login.php" class="btn-candidatar">Faça login para se candidatar</a>
         <?php endif; ?>
     </div>
+    <?php endif; ?>
 </main>
 
-<footer>
-    <p>&copy; 2025 BitVagas - Todos os direitos reservados.</p>
-</footer>
 </body>
 </html>
