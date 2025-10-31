@@ -80,7 +80,7 @@ h3 {
   color: var(--cor-destaque);
 }
 
-.btn-destaque, .btn-limpar, .btn-editar, .btn-desativar {
+.btn-destaque, .btn-limpar, .btn-editar, .btn-desativar, .btn-ativar {
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
   font-weight: bold;
@@ -128,6 +128,21 @@ h3 {
 }
 
 .btn-desativar:hover {
+  background: var(--cor-erro);
+  color: #fff;
+}
+
+.btn-ativar {
+    background-color: transparent;
+    color: var(--cor-erro);
+    border: 1px solid var(--cor-erro);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn-ativar:hover {
   background: var(--cor-erro);
   color: #fff;
 }
@@ -237,4 +252,30 @@ footer {
   max-width: 400px;
   text-align: center;
   border: 1px solid var(--cor-borda-vidro);
+}
+
+.btn-candidaturas {
+  background-color: #c50808;
+  color: #ffffff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: bold;
+  transition: 0.3s;
+  text-decoration: none;
+}
+
+.btn-candidaturas:hover {
+  background-color: #ff2626;
+  box-shadow: 0 0 8px rgba(232, 31, 4, 0.7);
+}
+
+input.input-senha {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(246, 2, 2, 0.874);
+  color: #fff;
+  margin-bottom: 1rem;
 }

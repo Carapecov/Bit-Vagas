@@ -103,9 +103,39 @@ $stmt->close();
     <title><?php echo $pode_exibir_conteudo ? htmlspecialchars($vaga['empresa'] . ' - Vaga Completa') : 'Vaga Não Encontrada'; ?></title>
     <link rel="stylesheet" href="css/vagas.css">
     <link rel="stylesheet" href="css/candidatar.css">
+    <style>
+header {
+    background-color: #0a0f1c;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    border-bottom: 1px solid #1f2937;
+}
+
+.btn-voltar {
+    background: linear-gradient(90deg, #007bff, #00b3ff);
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 18px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: 0.3s;
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+}
+
+.btn-voltar:hover {
+    background: linear-gradient(90deg, #00b3ff, #007bff);
+    transform: scale(1.05);
+}
+</style>
 </head>
 <body>
-            <button class=btn-destaque><a href="vagas.php">Voltar para as vagas</a></button>
+    <header>
+        <h1>BitVagas - Detalhes da Vaga</h1>
+    <a href="vagas.php" class="btn-voltar">Voltar para as vagas</a>
+    </header>
 <main>
     <?php echo $mensagem_status; ?>
     

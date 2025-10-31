@@ -10,36 +10,47 @@ if (!isset($_SESSION["usuario_id"])) {
 $id_usuario = $_SESSION["usuario_id"];
 $mensagem = "";
 
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["foto_perfil"])) {
+    $diretorio = "uploads/";
+    if (!is_dir($diretorio)) mkdir($diretorio, 0777, true);
+
+    $arquivo = $_FILES["foto_perfil"];
+    if ($arquivo["error"] === 0) {
+        $ext = strtolower(pathinfo($arquivo["name"], PATHINFO_EXTENSION));
+        $permitidos = ["jpg", "jpeg", "png", "gif"];
+
+        if (in_array($ext, $permitidos)) {
+            $novo_nome = "perfil_" . $id_usuario . "." . $ext;
+            $caminho_final = $diretorio . $novo_nome;
+
+            move_uploaded_file($arquivo["tmp_name"], $caminho_final);
+
+            $stmt = $conn->prepare("UPDATE usuarios SET foto_perfil=? WHERE id=?");
+            $stmt->bind_param("si", $caminho_final, $id_usuario);
+            $stmt->execute();
+
+            $mensagem = "<p style='color:green;text-align:center;'>📸 Foto de perfil atualizada!</p>";
+        } else {
+            $mensagem = "<p style='color:red;text-align:center;'>❌ Formato inválido. Use JPG, PNG ou GIF.</p>";
+        }
+    }
+}
+
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["atualizar"])) {
     function limpar($dado) { return htmlspecialchars(trim($dado)); }
 
     $campos = [
-        "nome", "cpf", "rg", "data_nascimento", "genero", "estado_civil",
-        "endereco", "telefone", "email", "instituicao", "curso", "periodo", "turno",
-        "matricula", "conclusao", "experiencia", "cursos_complementares", "idiomas",
-        "competencias_tecnicas", "competencias_comportamentais", "area_interesse",
-        "modalidade", "carga_horaria", "pretensao_bolsa", "cidade_preferencia"
+        "nome", "telefone", "email", "endereco",
+        "area_interesse", "competencias_tecnicas", "experiencia"
     ];
 
     foreach ($campos as $campo) {
         $$campo = limpar($_POST[$campo] ?? "");
     }
 
-    $sql = "UPDATE usuarios SET 
-        nome=?, cpf=?, rg=?, data_nascimento=?, genero=?, estado_civil=?, endereco=?, telefone=?, email=?,
-        instituicao=?, curso=?, periodo=?, turno=?, matricula=?, conclusao=?, experiencia=?, cursos_complementares=?,
-        idiomas=?, competencias_tecnicas=?, competencias_comportamentais=?, area_interesse=?, modalidade=?,
-        carga_horaria=?, pretensao_bolsa=?, cidade_preferencia=?
-        WHERE id=?";
-
+    $sql = "UPDATE usuarios SET nome=?, telefone=?, email=?, endereco=?, area_interesse=?, competencias_tecnicas=?, experiencia=? WHERE id=?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param(
-        "sssssssssssssssssssssssssi",
-        $nome, $cpf, $rg, $data_nascimento, $genero, $estado_civil, $endereco, $telefone, $email,
-        $instituicao, $curso, $periodo, $turno, $matricula, $conclusao, $experiencia, $cursos_complementares,
-        $idiomas, $competencias_tecnicas, $competencias_comportamentais, $area_interesse, $modalidade,
-        $carga_horaria, $pretensao_bolsa, $cidade_preferencia, $id_usuario
-    );
+    $stmt->bind_param("sssssssi", $nome, $telefone, $email, $endereco, $area_interesse, $competencias_tecnicas, $experiencia, $id_usuario);
 
     if ($stmt->execute()) {
         $mensagem = "<p style='color:green;text-align:center;'>✅ Perfil atualizado com sucesso!</p>";
@@ -49,7 +60,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["atualizar"])) {
 }
 
 if (isset($_POST["excluir"])) {
-    $conn->query("DELETE FROM candidaturas WHERE id = $id_usuario");
+    $conn->query("DELETE FROM candidaturas WHERE id_usuario = $id_usuario");
     $conn->query("DELETE FROM usuarios WHERE id = $id_usuario");
     session_destroy();
     header("Location: index.html");
@@ -139,7 +150,40 @@ button:hover { background-color: #2ea043; }
     padding: 10px 0;
 }
 .vaga-item:last-child { border-bottom: none; }
+
+.foto-perfil {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.foto-perfil img {
+    width: 150px;
+    height: 120px;
+    border-radius: 50%;
+    border: 3px solid #30363d;
+    object-fit: cover;
+}
 </style>
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.querySelector("form");
+    const inputs = form.querySelectorAll("input, textarea");
+    const botao = document.querySelector("button[name='atualizar']");
+    const valoresIniciais = {};
+
+    inputs.forEach(input => valoresIniciais[input.name] = input.value);
+
+    form.addEventListener("input", () => {
+        let alterou = false;
+        inputs.forEach(input => {
+            if (valoresIniciais[input.name] !== input.value) alterou = true;
+        });
+        botao.style.display = alterou ? "inline-block" : "none";
+    });
+
+    botao.style.display = "none";
+});
+</script>
 </head>
 <body>
 <header>
@@ -150,6 +194,15 @@ button:hover { background-color: #2ea043; }
 <main>
     <h1>Meu Perfil</h1>
     <?php echo $mensagem; ?>
+
+    <div class="foto-perfil">
+        <img src="<?php echo !empty($usuario['foto_perfil']) ? htmlspecialchars($usuario['foto_perfil']) : 'img/default.jpg'; ?>" alt="Foto de perfil">
+        <br>
+        <form method="POST" enctype="multipart/form-data" style="margin-top:10px;">
+            <input type="file" name="foto_perfil" accept="image/*">
+            <button type="submit">Enviar Foto</button>
+        </form>
+    </div>
 
     <form method="POST" action="">
         <label>Nome completo</label>
@@ -172,25 +225,6 @@ button:hover { background-color: #2ea043; }
 
         <label>Experiência</label>
         <textarea name="experiencia"><?php echo htmlspecialchars($usuario['experiencia']); ?></textarea>
-
-        <input type="hidden" name="cpf" value="<?php echo htmlspecialchars($usuario['cpf']); ?>">
-        <input type="hidden" name="rg" value="<?php echo htmlspecialchars($usuario['rg']); ?>">
-        <input type="hidden" name="data_nascimento" value="<?php echo htmlspecialchars($usuario['data_nascimento']); ?>">
-        <input type="hidden" name="genero" value="<?php echo htmlspecialchars($usuario['genero']); ?>">
-        <input type="hidden" name="estado_civil" value="<?php echo htmlspecialchars($usuario['estado_civil']); ?>">
-        <input type="hidden" name="instituicao" value="<?php echo htmlspecialchars($usuario['instituicao']); ?>">
-        <input type="hidden" name="curso" value="<?php echo htmlspecialchars($usuario['curso']); ?>">
-        <input type="hidden" name="periodo" value="<?php echo htmlspecialchars($usuario['periodo']); ?>">
-        <input type="hidden" name="turno" value="<?php echo htmlspecialchars($usuario['turno']); ?>">
-        <input type="hidden" name="matricula" value="<?php echo htmlspecialchars($usuario['matricula']); ?>">
-        <input type="hidden" name="conclusao" value="<?php echo htmlspecialchars($usuario['conclusao']); ?>">
-        <input type="hidden" name="cursos_complementares" value="<?php echo htmlspecialchars($usuario['cursos_complementares']); ?>">
-        <input type="hidden" name="idiomas" value="<?php echo htmlspecialchars($usuario['idiomas']); ?>">
-        <input type="hidden" name="competencias_comportamentais" value="<?php echo htmlspecialchars($usuario['competencias_comportamentais']); ?>">
-        <input type="hidden" name="modalidade" value="<?php echo htmlspecialchars($usuario['modalidade']); ?>">
-        <input type="hidden" name="carga_horaria" value="<?php echo htmlspecialchars($usuario['carga_horaria']); ?>">
-        <input type="hidden" name="pretensao_bolsa" value="<?php echo htmlspecialchars($usuario['pretensao_bolsa']); ?>">
-        <input type="hidden" name="cidade_preferencia" value="<?php echo htmlspecialchars($usuario['cidade_preferencia']); ?>">
 
         <button type="submit" name="atualizar">Atualizar Perfil</button>
         <button type="submit" name="excluir" class="excluir" onclick="return confirm('Tem certeza que deseja excluir sua conta? Essa ação é irreversível.')">Excluir Conta</button>

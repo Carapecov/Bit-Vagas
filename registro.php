@@ -1,82 +1,103 @@
 <?php
 session_start();
-include("config/conexao.php");
+require_once "./config/conexao.php";
 
 $erro = "";
 $sucesso = "";
 
+function limpar($dado) {
+    return trim(strip_tags($dado));
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  function limpar($dado) {
-    return htmlspecialchars(trim($dado));
-  }
 
-  $nome = limpar($_POST["nome"]);
-  $cpf = limpar($_POST["cpf"]);
-  $rg = limpar($_POST["rg"]);
-  $data_nascimento = limpar($_POST["data_nascimento"]);
-  $genero = limpar($_POST["genero"]);
-  $estado_civil = limpar($_POST["estado_civil"]);
-  $endereco = limpar($_POST["endereco"]);
-  $telefone = limpar($_POST["telefone"]);
-  $email = limpar($_POST["email"]);
-  $senha = limpar($_POST["senha"]);
-  $instituicao = limpar($_POST["instituicao"]);
-  $curso = limpar($_POST["curso"]);
-  $periodo = limpar($_POST["periodo"]);
-  $turno = limpar($_POST["turno"]);
-  $matricula = limpar($_POST["matricula"]);
-  $conclusao = limpar($_POST["conclusao"]);
-  $experiencia = limpar($_POST["experiencia"]);
-  $cursos_complementares = limpar($_POST["cursos_complementares"]);
-  $idiomas = limpar($_POST["idiomas"]);
-  $competencias_tecnicas = limpar($_POST["competencias_tecnicas"]);
-  $competencias_comportamentais = limpar($_POST["competencias_comportamentais"]);
-  $area_interesse = limpar($_POST["area_interesse"]);
-  $modalidade = limpar($_POST["modalidade"]);
-  $carga_horaria = limpar($_POST["carga_horaria"]);
-  $pretensao_bolsa = limpar($_POST["pretensao_bolsa"]);
-  $cidade_preferencia = limpar($_POST["cidade_preferencia"]);
+    $nome = limpar($_POST["nome"] ?? "");
+    $cpf = limpar($_POST["cpf"] ?? "");
+    $rg = limpar($_POST["rg"] ?? "");
+    $data_nascimento = limpar($_POST["data_nascimento"] ?? "");
+    $genero = limpar($_POST["genero"] ?? "");
+    $estado_civil = limpar($_POST["estado_civil"] ?? "");
+    $endereco = limpar($_POST["endereco"] ?? "");
+    $telefone = limpar($_POST["telefone"] ?? "");
+    $email = limpar($_POST["email"] ?? "");
+    $senha = limpar($_POST["senha"] ?? "");
+    $confirmar_senha = limpar($_POST["confirmar_senha"] ?? "");
 
-  if (empty($nome) || empty($cpf) || empty($email) || empty($senha)) {
-    $erro = "Preencha todos os campos obrigatórios (nome, CPF, e-mail e senha).";
-  } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    $erro = "E-mail inválido.";
-  } else {
-    $verifica = $conn->prepare("SELECT id_usuario FROM usuarios WHERE cpf=? OR email=?");
-    $verifica->bind_param("ss", $cpf, $email);
-    $verifica->execute();
-    $verifica->store_result();
+    $instituicao = limpar($_POST["instituicao"] ?? "");
+    $curso = limpar($_POST["curso"] ?? "");
+    $periodo = limpar($_POST["periodo"] ?? "");
+    $turno = limpar($_POST["turno"] ?? "");
+    $matricula = limpar($_POST["matricula"] ?? "");
+    $conclusao = limpar($_POST["conclusao"] ?? "");
+    $experiencia = limpar($_POST["experiencia"] ?? "");
+    $cursos_complementares = limpar($_POST["cursos_complementares"] ?? "");
+    $idiomas = limpar($_POST["idiomas"] ?? "");
+    $competencias_tecnicas = limpar($_POST["competencias_tecnicas"] ?? "");
+    $competencias_comportamentais = limpar($_POST["competencias_comportamentais"] ?? "");
+    $area_interesse = limpar($_POST["area_interesse"] ?? "");
+    $modalidade = limpar($_POST["modalidade"] ?? "");
+    $carga_horaria = limpar($_POST["carga_horaria"] ?? "");
+    $pretensao_bolsa = limpar($_POST["pretensao_bolsa"] ?? "");
+    $cidade_preferencia = limpar($_POST["cidade_preferencia"] ?? "");
 
-    if ($verifica->num_rows > 0) {
-      $erro = "Já existe um cadastro com esse CPF ou e-mail.";
+    if (
+        empty($nome) || empty($cpf) || empty($rg) || empty($data_nascimento) ||
+        empty($genero) || empty($estado_civil) || empty($endereco) ||
+        empty($telefone) || empty($email) || empty($senha)
+    ) {
+        $erro = "Preencha todos os campos obrigatórios.";
+    } elseif (!preg_match("/^[0-9]{11}$/", $cpf)) {
+        $erro = "O CPF deve conter apenas números e ter 11 dígitos.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $erro = "Digite um e-mail válido.";
+    } elseif (strlen($senha) < 8 || !preg_match("/[A-Za-z]/", $senha) || !preg_match("/[0-9]/", $senha)) {
+        $erro = "A senha deve ter pelo menos 8 caracteres, com letras e números.";
+    } elseif ($senha !== $confirmar_senha) {
+        $erro = "As senhas não coincidem.";
     } else {
-      $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
+        $stmt = $conn->prepare("SELECT id FROM usuarios WHERE cpf = ? OR email = ?");
+        $stmt->bind_param("ss", $cpf, $email);
+        $stmt->execute();
+        $stmt->store_result();
 
-      $stmt = $conn->prepare("INSERT INTO usuarios 
-      (nome, cpf, rg, data_nascimento, genero, estado_civil, endereco, telefone, email, senha,
-       instituicao, curso, periodo, turno, matricula, conclusao, experiencia, cursos_complementares,
-       idiomas, competencias_tecnicas, competencias_comportamentais, area_interesse, modalidade,
-       carga_horaria, pretensao_bolsa, cidade_preferencia)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+        if ($stmt->num_rows > 0) {
+            $erro = "CPF ou e-mail já cadastrados.";
+        } else {
+            $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
 
-      $stmt->bind_param("ssssssssssssssssssssssssss",
-        $nome, $cpf, $rg, $data_nascimento, $genero, $estado_civil, $endereco, $telefone, $email, $senha_hash,
-        $instituicao, $curso, $periodo, $turno, $matricula, $conclusao, $experiencia, $cursos_complementares,
-        $idiomas, $competencias_tecnicas, $competencias_comportamentais, $area_interesse, $modalidade,
-        $carga_horaria, $pretensao_bolsa, $cidade_preferencia
-      );
+            $stmt = $conn->prepare("INSERT INTO usuarios 
+            (nome, cpf, rg, data_nascimento, genero, estado_civil, endereco, telefone, email, senha, 
+             instituicao, curso, periodo, turno, matricula, conclusao, experiencia, cursos_complementares, 
+             idiomas, competencias_tecnicas, competencias_comportamentais, area_interesse, modalidade, 
+             carga_horaria, pretensao_bolsa, cidade_preferencia)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-      if ($stmt->execute()) {
-        $sucesso = "Cadastro realizado com sucesso!";
-        header("Location: vagas.php");
-        exit();
-      } else {
-        $erro = "Erro ao cadastrar: " . $stmt->error;
-      }
-      $stmt->close();
+            $stmt->bind_param("ssssssssssssssssssssssssss",
+                $nome, $cpf, $rg, $data_nascimento, $genero, $estado_civil,
+                $endereco, $telefone, $email, $senha_hash, $instituicao, $curso,
+                $periodo, $turno, $matricula, $conclusao, $experiencia,
+                $cursos_complementares, $idiomas, $competencias_tecnicas,
+                $competencias_comportamentais, $area_interesse, $modalidade,
+                $carga_horaria, $pretensao_bolsa, $cidade_preferencia
+            );
+
+            if ($stmt->execute()) {
+                $novo_id = $stmt->insert_id;
+
+                $_SESSION["usuario_id"] = $novo_id;
+                $_SESSION["usuario_nome"] = $nome;
+                $_SESSION["usuario_email"] = $email;
+
+                header("Location: vagas.php");
+                exit;
+            } else {
+                $erro = "Erro ao cadastrar. Tente novamente.";
+            }
+        }
+        $stmt->close();
     }
-    $verifica->close();
-  }
+
+    $conn->close();
 }
 ?>
 
@@ -139,6 +160,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           <label>Senha *</label>
           <input type="password" name="senha">
         </div>
+        <div>
+          <label>Confirmar senha *</label>
+          <input type="password" name="confirmar_senha">
       </fieldset>
 
       <fieldset class="panel">
