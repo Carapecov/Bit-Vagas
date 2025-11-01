@@ -196,7 +196,7 @@ header {
             <p><strong>Email:</strong> <a href="mailto:<?php echo htmlspecialchars($vaga['email_contato']); ?>"><?php echo htmlspecialchars($vaga['email_contato']); ?></a></p>
             <p><strong>Telefone:</strong> <?php echo htmlspecialchars($vaga['telefone']); ?></p>
             <p><strong>Data de publicação:</strong> <?php echo date("d/m/Y H:i", strtotime($vaga['data_postagem'])); ?></p>
-            <button class="btn-destaque"><a href="empresa.php?id=<?php echo $vaga['id']; ?>" target="_blank">Visitar Site da Empresa</a></button>
+            <button class="btn-destaque"><a href="empresa.php?nome=<?php echo urlencode($vaga['empresa']); ?>" target="_blank">Visitar Site da Empresa</a></button>
         </div>
 
         <?php if (isset($_SESSION["usuario_id"])): ?>

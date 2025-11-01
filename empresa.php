@@ -5,25 +5,22 @@ require_once "./config/conexao.php";
 $empresa = null;
 $mensagem = "";
 
-if (isset($_GET["id"]) && is_numeric($_GET["id"])) {
-    $id_empresa_visualizar = (int)$_GET["id"];
-} else {
-    $id_empresa_visualizar = 0;
-}
-
-if ($id_empresa_visualizar === 0) {
-    $mensagem = "<p style='color:red;text-align:center;'>❌ ID de empresa não fornecido ou inválido.</p>";
-} else {
-    $stmt = $conn->prepare("SELECT * FROM empresa WHERE id = ?");
-    $stmt->bind_param("i", $id_empresa_visualizar);
+if (isset($_GET["nome"]) && !empty(trim($_GET["nome"]))) {
+    $nome_empresa_visualizar = trim($_GET["nome"]);
+    
+    $stmt = $conn->prepare("SELECT * FROM empresa WHERE nome = ?");
+    $stmt->bind_param("s", $nome_empresa_visualizar);
     $stmt->execute();
     $resultado = $stmt->get_result();
     $empresa = $resultado->fetch_assoc();
     $stmt->close();
     
     if (!$empresa) {
-        $mensagem = "<p style='color:red;text-align:center;'>❌ Empresa não encontrada.</p>";
+        $mensagem = "<p style='color:red;text-align:center;'>❌ Empresa não encontrada ou o nome é inválido.</p>";
     }
+    
+} else {
+    $mensagem = "<p style='color:red;text-align:center;'>❌ Nome da empresa não fornecido.</p>";
 }
 
 $candidato_logado = isset($_SESSION["usuario_id"]); 
@@ -33,18 +30,18 @@ $candidato_logado = isset($_SESSION["usuario_id"]);
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Perfil da Empresa: <?php echo $empresa ? htmlspecialchars($empresa['nome_fantasia']) : 'Detalhes'; ?></title>
+<title>Perfil da Empresa: <?php echo $empresa ? htmlspecialchars($empresa['nome']) : 'Detalhes'; ?></title>
 <link rel="stylesheet" href="css/empresa.css">
 </head>
 <body>
 <header>
-    <h2>Detalhes da Empresa</h2>
-        <a href="vagas.php" class="btn-voltar">Voltar para Vagas</a> 
+    <h2>Detalhes da Empresa</h2>
+        <a href="vagas.php" class="btn-voltar">Voltar para Vagas</a> 
 </header>
 
 <main>
-    <h1>Perfil de: <?php echo $empresa ? htmlspecialchars($empresa['nome']) : 'Empresa'; ?></h1>
-    <?php echo $mensagem; ?>
+    <h1>Perfil de: <?php echo $empresa ? htmlspecialchars($empresa['nome']) : 'Empresa'; ?></h1>
+    <?php echo $mensagem; ?>
 
     <?php if ($empresa): ?>
         <label>Razão Social</label>
