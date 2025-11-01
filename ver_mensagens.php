@@ -26,6 +26,9 @@ while ($msg = $result->fetch_assoc()) {
     $mensagens[] = $msg;
 }
 
+error_log("Debug ID Usuário: $id_usuario");
+error_log(print_r($mensagens, true));
+
 echo json_encode($mensagens);
 
 ?>

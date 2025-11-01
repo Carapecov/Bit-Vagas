@@ -71,6 +71,7 @@ if ($mostrar_detalhes && $id_candidatura) {
                     <article class="vaga-card">
                         <h2><?php echo htmlspecialchars($cand['nome']); ?></h2>
                         <p><strong>Data da candidatura:</strong> <?php echo date('d/m/Y H:i', strtotime($cand['data_candidatura'])); ?></p>
+                        <br>
                         <a href="candidaturas.php?id_vaga=<?php echo $id_vaga; ?>&id=<?php echo $cand['id']; ?>" class="btn-editar">Ver informações</a>
                     </article>
                 <?php endwhile; ?>
@@ -105,7 +106,7 @@ if ($mostrar_detalhes && $id_candidatura) {
                 <form id="formMensagem" method="POST" action="enviar_mensagem.php" style="display:none; margin-top:20px;">
         <input type="hidden" name="id" value="<?php echo $candidatura['id']; ?>"> 
         <input type="hidden" name="tipo" id="tipo" value="">
-        <label for="mensagem">Mensagem da Empresa:</label>
+        <label for="mensagem"><strong>Mensagem da Empresa:<strong></label>
         <textarea name="mensagem" id="mensagem" rows="4" placeholder="Escreva sua mensagem..."></textarea>
 
         <button type="submit" class="btn-destaque">Enviar Mensagem</button>
@@ -118,6 +119,8 @@ if ($mostrar_detalhes && $id_candidatura) {
 </main>
 
 <script>
+const empresa_nome = <?php echo json_encode($empresa_nome); ?>;
+
 function mostrarMensagem(tipo) {
     const form = document.getElementById('formMensagem');
     const textarea = document.getElementById('mensagem');
@@ -127,10 +130,10 @@ function mostrarMensagem(tipo) {
     campoTipo.value = tipo;
 
     if (tipo === 'aceitar') {
-        textarea.value = "Parabéns! Sua candidatura foi aceita. Entraremos em contato em breve.";
+        textarea.value = `Parabéns! Sua candidatura foi aceita. Nós da ${empresa_nome} Entraremos em contato em breve!`;
         textarea.readOnly = true;
     } else {
-        textarea.value = "";
+        textarea.value = "Não dessa vez, mas agradecemos seu interesse. Desejamos sucesso em sua busca por oportunidades! E Coletamos suas informações para uma futura oportunidade.";
         textarea.readOnly = false;
     }
 }

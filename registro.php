@@ -157,7 +157,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           <input type="email" name="email">
         </div>
         <div>
-          <label>Senha *</label>
+          <label>Senha * (A senha deve conter 8 caracteres com letras e numeros)</label>
           <input type="password" name="senha">
         </div>
         <div>
